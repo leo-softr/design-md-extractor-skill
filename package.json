@@ -1,6 +1,6 @@
 {
   "name": "building-design-md",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Claude Code skill: extract a brand foundation (colors, typography, voice, marketing-page patterns) into a portable DESIGN.md file for downstream Softr/Webflow/React generators. Installs into ~/.claude/skills/ and auto-updates on each Claude Code session.",
   "bin": {
     "building-design-md": "./bin/cli.js"

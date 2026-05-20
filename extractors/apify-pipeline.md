@@ -1,6 +1,6 @@
 # Path A — Apify + Exa Tiered Extraction Pipeline
 
-This is the pipeline for extracting design tokens from a live website URL. It runs multiple Apify actors plus Exa in three tiers, with each tier filling gaps the previous tier left. Validated end-to-end on example.com — see [examples/northwind-studio-DESIGN.md](../examples/northwind-studio-DESIGN.md).
+This is the pipeline for extracting design tokens from a live website URL. It runs multiple Apify actors plus Exa in three tiers, with each tier filling gaps the previous tier left. Validated end-to-end on real B2B agency marketing sites. See [examples/northwind-studio-DESIGN.md](../examples/northwind-studio-DESIGN.md) for a fictional reference example showing the resulting DESIGN.md format.
 
 ## Prerequisites
 
@@ -296,15 +296,17 @@ Total wall time for a complete extraction (Tier 1 + 1.5 + 2a + 2b): about 90–1
 
 If two tiers fail in a row, stop the pipeline and tell the user honestly. Do not synthesize a `DESIGN.md` from imagination.
 
-## Worked example — example.com
+## Worked example — recent run
 
-1. Tier 1.1 → 31 colors including primary `#e82d42`, with full hex+usage map.
+Recent end-to-end run against a B2B agency marketing site (Astro + Sanity + Tailwind stack):
+
+1. Tier 1.1 → 31 colors extracted with full hex+usage map, including a single dominant brand voltage.
 2. Tier 1.2 → empty (site uses Tailwind utility classes, not `@font-face`).
 3. Tier 1.3 → Astro + Sanity CMS + Tailwind + Cloudflare + Alpine.js + Preact.
-4. Tier 1.4 → 66KB of clean markdown including hero copy: "Become the business everyone wants to beat", "Turn your business into a lean, mean productivity machine".
-5. Tier 1.5 → Synthesized voice paragraph: "Confident but friendly, slightly playful, customer-success-driven, never corporate-stiff."
+4. Tier 1.4 → ~66KB of clean markdown including hero copy and CTA patterns.
+5. Tier 1.5 → Synthesized voice paragraph capturing the site's register (confident, customer-success-driven).
 6. Tier 2a → Class counts: `font-serif` 209x, `font-sans` 3x. Misleading signal — would have produced wrong "serif-dominant" reading.
-7. Tier 2b → Computed `font-family`: `PPNeueMontreal` for h1, `KitSans` for body. Both sans-serif. Tailwind `font-serif` aliased to a sans font. Trap caught.
-8. DESIGN.md synthesized with all extracted, no `needs-verification` flags. See [../examples/northwind-studio-DESIGN.md](../examples/northwind-studio-DESIGN.md).
+7. Tier 2b → Computed `font-family` showed both heading and body were sans-serif. Tailwind `font-serif` aliased to a sans typeface. Trap caught.
+8. DESIGN.md synthesized with all extracted tokens, no `needs-verification` flags.
 
-This run took about 100 seconds and cost about $0.08.
+This run took about 100 seconds and cost about $0.08. See [../examples/northwind-studio-DESIGN.md](../examples/northwind-studio-DESIGN.md) for a fictional reference DESIGN.md showing the resulting schema.

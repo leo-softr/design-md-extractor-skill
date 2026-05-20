@@ -31,7 +31,7 @@ Once compiled, the rendered page contains markup like:
 
 Static analysis of the HTML (Tier 2a) sees `font-serif` and concludes "the brand is using a serif typeface for headlines." But `getComputedStyle(h1).fontFamily` returns `PPNeueMontreal, Arial, sans-serif` — a sans-serif typeface.
 
-This is what happened on example.com. The class-count analysis returned `font-serif: 209 uses, font-sans: 3 uses`. Confident "serif-dominant" reading. Wrong by 100%.
+This is what happened on a real B2B agency site we ran the pipeline against (Astro + Sanity + Tailwind stack). The class-count analysis returned `font-serif: 209 uses, font-sans: 3 uses`. Confident "serif-dominant" reading. Wrong by 100%.
 
 ## Why brands do this
 
@@ -82,4 +82,4 @@ Including this note keeps downstream consumers honest and trains future versions
 
 ## Reference example
 
-See [../examples/northwind-studio-DESIGN.md](../examples/northwind-studio-DESIGN.md) for a production-quality DESIGN.md that documents this trap explicitly in its Typography section.
+See [../examples/northwind-studio-DESIGN.md](../examples/northwind-studio-DESIGN.md) for a complete reference DESIGN.md showing the schema (note: the example uses a single-typeface system so it does not itself reproduce this specific trap — the trap is documented standalone here).

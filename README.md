@@ -105,7 +105,7 @@ building-design-md/
 │   ├── google-fonts-substitutes.md   # Fallback table for licensed brand fonts
 │   └── custom-code-header.md         # Generating the Softr Custom Code snippet
 └── examples/
-    └── northwind-studio-DESIGN.md        # A real working extraction
+    └── northwind-studio-DESIGN.md    # Fictional reference example
 ```
 
 ## What this skill is *not*

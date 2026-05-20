@@ -141,4 +141,4 @@ extraction_status:
 
 ## Reference example
 
-After a complete Q&A run, the resulting DESIGN.md should look like a smaller version of the [northwind-studio-DESIGN.md](../examples/northwind-studio-DESIGN.md) example, with `inferred` flags on the typography hierarchy and `extracted-by-user` on the Q1/Q2 colors.
+After a complete Q&A run, the resulting DESIGN.md should look like a smaller version of the [northwind-studio-DESIGN.md](../examples/northwind-studio-DESIGN.md) reference example, with `inferred` flags on the typography hierarchy and `extracted-by-user` on the Q1/Q2 colors.

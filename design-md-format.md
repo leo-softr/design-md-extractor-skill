@@ -254,7 +254,7 @@ The `{colors.x}` and `{typography.x}` references are interpreted by downstream t
 
 3–4 paragraphs capturing the brand atmosphere in plain language. Reference frontmatter tokens with the `{colors.primary}` syntax. This is the single most important prose section — it gives downstream LLMs the "feel" the tokens alone can't convey.
 
-Example opening: *"Northwind Studio is a B2B workflow-automation consulting agency. The brand identity is anchored on a single vivid red voltage (`{colors.primary}` — `#e82d42`) carried across all primary CTAs..."*
+Example opening: *"Northwind Studio is a B2B workflow-automation consultancy. The brand identity is anchored on a single deep teal voltage (`{colors.primary}` — `#0E6B7A`) carried across all primary CTAs..."*
 
 ### Voice & Copy Register
 
@@ -312,6 +312,6 @@ When the user uploads their own `DESIGN.md` (Path C), validate against this sche
 
 If validation fails, return a list of the specific missing or malformed fields and ask the user to fix or supply them. Do not silently fill gaps.
 
-## Reference: real example
+## Reference: example
 
-See [examples/northwind-studio-DESIGN.md](examples/northwind-studio-DESIGN.md) for a complete `DESIGN.md` produced by Path A on a real website (example.com). It demonstrates the format with real extracted tokens, confidence flags, and a known-gaps section.
+See [examples/northwind-studio-DESIGN.md](examples/northwind-studio-DESIGN.md) for a complete `DESIGN.md` (fictional reference example). It demonstrates the schema, brand-token references, and Application Patterns scaffold. Real extractions add `extracted` / `inferred` / `needs-verification` confidence flags on individual tokens — this synthesized example marks them all as `example-only` to make its non-real nature explicit.
