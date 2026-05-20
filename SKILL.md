@@ -305,6 +305,7 @@ Tell the user:
    > "Step 1 (this skill) is done. To continue:
    > 1. Paste `custom-code-header.html` into your Softr app: **Settings → Custom Code → Code inside header**, then save and publish.
    > 2. Run the **`softr-vibe-coding`** skill to generate brand-aligned Vibe Coding blocks from this DESIGN.md. Trigger it with something like 'build me a Softr block for X' or 'create a claims dashboard.' The skill auto-reads `./DESIGN.md` and applies the tokens.
+   >    - *Not installed yet?* Run `npx softr-vibe-coding@latest init` in your terminal. It installs the skill into `~/.claude/skills/` and keeps it auto-updated on each Claude Code session.
    >
    > That's the whole pipeline: brand → blocks. No other skills needed."
 4. The evolution path:

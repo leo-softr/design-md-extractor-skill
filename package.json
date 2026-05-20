@@ -1,0 +1,40 @@
+{
+  "name": "building-design-md",
+  "version": "1.0.0",
+  "description": "Claude Code skill: extract a brand foundation (colors, typography, voice, marketing-page patterns) into a portable DESIGN.md file for downstream Softr/Webflow/React generators. Installs into ~/.claude/skills/ and auto-updates on each Claude Code session.",
+  "bin": {
+    "building-design-md": "./bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "SKILL.md",
+    "README.md",
+    "design-md-format.md",
+    "references/",
+    "extractors/",
+    "examples/"
+  ],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "claude-skill",
+    "design-system",
+    "brand-extraction",
+    "design-md",
+    "softr",
+    "design-tokens"
+  ],
+  "homepage": "https://github.com/leo-softr/design-md-extractor-skill#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leo-softr/design-md-extractor-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/leo-softr/design-md-extractor-skill/issues"
+  },
+  "author": "leo-softr <leo@softr.io>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

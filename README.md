@@ -22,6 +22,18 @@ The skill always produces two files:
 
 ## Install
 
+### Claude Code — one-line install with auto-updates (recommended)
+
+```bash
+npx building-design-md@latest init
+```
+
+This installs the skill into `~/.claude/skills/building-design-md/` and adds a `SessionStart` hook to `~/.claude/settings.json` so the skill auto-updates to the latest published version on every Claude Code session. No manual `git pull` needed.
+
+Requires Node.js 18+.
+
+### Other agents (manual install)
+
 Drop the `building-design-md/` folder into your skills directory:
 
 | Agent | Path |
@@ -30,6 +42,8 @@ Drop the `building-design-md/` folder into your skills directory:
 | Cursor | `~/.cursor/skills/` |
 | GitHub Copilot | `~/.copilot/skills/` or `./.github/skills/` |
 | Gemini CLI | `~/.gemini/skills/` |
+
+Get the folder via `git clone https://github.com/leo-softr/design-md-extractor-skill.git` or by downloading the repo ZIP.
 
 Restart your client. Verify by typing `/building-design-md` (or asking the AI "extract brand from a URL"). The skill should appear in the slash-command menu or trigger automatically on relevant requests.
 
@@ -100,9 +114,26 @@ building-design-md/
 - **Not** a website cloner. It captures tokens, not pixel-perfect replicas.
 - **Not** a substitute for human design judgment. Confidence flags exist because extractors are imperfect — review them.
 
-## Companion skills
+## Companion skill — `softr-vibe-coding`
 
-This skill is built to feed downstream tools. The intended companion is the `softr-vibe-coding` skill, which reads the `DESIGN.md` produced here and generates Softr Vibe Coding blocks that match the brand. Other consumers (Webflow generators, hand-rolled React, Figma plugins) can read the same `DESIGN.md` if they understand the format from <https://stitch.withgoogle.com/docs/design-md> or <https://github.com/VoltAgent/awesome-design-md>.
+This skill is **Step 1** of a two-skill pipeline:
+
+```
+New client → building-design-md (brand → DESIGN.md) → softr-vibe-coding (DESIGN.md → JSX blocks) → shipped Softr app
+```
+
+The intended downstream is the [`softr-vibe-coding`](https://github.com/leo-softr/Softr-Vibe-Coding-Block-Claude-Skill) skill, which reads the `DESIGN.md` produced here and generates brand-aligned Softr Vibe Coding blocks (custom JSX components) without re-asking about colors, fonts, or component patterns.
+
+**Install both for the full workflow** (one-line each):
+
+```bash
+npx building-design-md@latest init
+npx softr-vibe-coding@latest init
+```
+
+Both auto-update on every Claude Code session.
+
+Other consumers (Webflow generators, hand-rolled React, Figma plugins) can read the same `DESIGN.md` if they understand the format from <https://stitch.withgoogle.com/docs/design-md> or <https://github.com/VoltAgent/awesome-design-md>.
 
 ## License
 
