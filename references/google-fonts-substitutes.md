@@ -2,7 +2,7 @@
 
 When a brand uses a paid foundry font that isn't on Google Fonts, downstream consumers (especially Softr blocks rendered in a runtime that doesn't load licensed fonts) need an open-source fallback. This table maps the most common licensed brand fonts to the closest Google Fonts substitute.
 
-Use this table when synthesizing the `font-display-open-source-substitute` and `font-body-open-source-substitute` fields in DESIGN.md.
+Use this table when synthesizing the `display-open-source-substitute` and `body-open-source-substitute` fields in the DESIGN.md `fonts` frontmatter block.
 
 ## Substitute table
 
@@ -72,12 +72,14 @@ When a brand uses two licensed fonts (e.g. PPNeueMontreal for headings + KitSans
 
 ```yaml
 # Two paid fonts → single Inter substitute (most B2B sites)
-font-display-open-source-substitute: "Inter"
-font-body-open-source-substitute: "Inter"
+fonts:
+  display-open-source-substitute: "Inter"
+  body-open-source-substitute: "Inter"
 
 # Serif display + sans body → split substitute
-font-display-open-source-substitute: "Fraunces"
-font-body-open-source-substitute: "Inter"
+fonts:
+  display-open-source-substitute: "Fraunces"
+  body-open-source-substitute: "Inter"
 ```
 
 ## When the licensed font isn't in this table
@@ -86,18 +88,18 @@ For obscure fonts not listed above:
 
 1. Try a Google search for the font name + "Google Fonts alternative" — the design community often documents these.
 2. If unsure, default to **Inter** for sans, **Fraunces** for serif, **JetBrains Mono** for monospace.
-3. Note in the `Known Gaps` section: "Open-source substitute is a best-effort guess; consider running the live site through `apify/web-scraper` Tier 2b to confirm the actual font, then verify the substitute looks similar."
+3. Note in the `Known Gaps` section: "Open-source substitute is a best-effort guess; cross-check the actual font via the Font URLs in the dembrandt extraction (the webfont filenames usually name the face), then verify the substitute looks similar."
 
 ## Reference: how this gets used
 
-The DESIGN.md `typography` block should always include both the licensed name and the substitute:
+The DESIGN.md `fonts` frontmatter block should always include both the licensed name and the substitute (never write these into the `typography` block — that's dembrandt-owned base and is never restructured):
 
 ```yaml
-typography:
-  font-display-name: "PPNeueMontreal"
-  font-display-fallback-stack: "PPNeueMontreal, Arial, sans-serif"
-  font-display-open-source-substitute: "Inter"
-  font-display-licensing: "Paid font from Pangram Pangram Foundry"
+fonts:
+  display-name: "PPNeueMontreal"
+  display-fallback-stack: "'PPNeueMontreal', Arial, sans-serif"
+  display-open-source-substitute: "Inter"
+  display-licensing: "Paid — Pangram Pangram"
 ```
 
 Downstream consumers (Softr, Webflow, etc.) decide whether to load the licensed font or fall back to the substitute based on what's available in their runtime.

@@ -1,29 +1,32 @@
 ---
 name: building-design-md
 description: >
-  Step 1 of the Softr brand-to-blocks workflow. Extracts a brand foundation (colors,
-  typography, voice, marketing-page patterns) from a website URL, awesome-design-md
-  catalog link, uploaded DESIGN.md file, or guided Q&A, then scaffolds Softr-specific
-  app patterns (modals, empty states, status pills, page layouts, etc.) using the
-  extracted brand tokens. Output is a DESIGN.md tailored for downstream consumption
-  by the `softr-vibe-coding` skill — not a generic cross-framework design system.
-  Use when starting a new Softr client project, or when asked to "extract brand from
-  website", "generate a DESIGN.md", "build a design system", "set up brand colors and
-  fonts", "create a brand kit from this URL", or pastes a website URL with intent to
-  capture design tokens for a Softr app.
+  Brand-foundation step of the Softr brand-to-blocks workflow. Drives the dembrandt
+  design-token extractor (real-browser crawl of a website URL) — or a catalog file,
+  an uploaded DESIGN.md, or guided Q&A — to produce a `./DESIGN.md`, then layers on
+  what raw extraction can't provide: voice & copy register, resolved font names,
+  logo assets, Softr app-pattern scaffolds (modals, empty states, status pills,
+  page layouts), and a `custom-code-header.html` for app-level brand inheritance.
+  Output is a DESIGN.md tailored for downstream consumption by the
+  `softr-vibe-coding` skill. Use when starting a new Softr client project, or when
+  asked to "extract brand from website", "generate a DESIGN.md", "build a design
+  system", "set up brand colors and fonts", "create a brand kit from this URL", or
+  the user pastes a website URL with intent to capture design tokens for a Softr
+  app. (For a quick raw DESIGN.md mid-build with none of the layers, softr-vibe-coding's
+  own Step 1 drives dembrandt directly — this skill is the thorough session.)
 ---
 
 # Building Design MD Skill
 
-This skill is **Step 1 of the Softr workflow**:
+This skill is the **brand-foundation step of the Softr workflow**:
 
 ```
-New client → building-design-md (this skill) → softr-vibe-coding → shipped Softr blocks
+New client → building-design-md (dembrandt → DESIGN.md + layers) → softr-vibe-coding → shipped Softr blocks
 ```
 
-It produces a single canonical artifact — a `DESIGN.md` file in the project folder — that the `softr-vibe-coding` skill consumes downstream to generate brand-aligned Softr Vibe Coding blocks (custom JSX components inside a Softr app). The output is **deliberately Softr-specific** — it bakes in Softr's tech stack (shadcn/ui, Tailwind, lucide-react, sonner, date-fns) and Softr's bundler constraints (no `?.` or `??`, named React imports only, etc.) — and is not intended as a portable design system for other frameworks.
+It produces a single canonical artifact — a `DESIGN.md` file in the project folder — that the `softr-vibe-coding` skill consumes downstream to generate brand-aligned Softr Vibe Coding blocks (custom TSX/JSX components inside a Softr app). Since v2.0.0, the token extraction engine is **[dembrandt](https://github.com/dembrandt/dembrandt)** (real-browser computed-style extraction), and the file's base layer is dembrandt's own DESIGN.md output — this skill's value is everything layered on top: voice, resolved fonts, assets, app-pattern scaffolds, verification, and the Softr custom-code snippet. The output is **deliberately Softr-specific** — it bakes in Softr's tech stack (shadcn/ui, Tailwind, lucide-react, sonner, date-fns; modern TypeScript compiles on the current platform) — and is not intended as a portable design system for other frameworks.
 
-This skill captures and scaffolds. The `softr-vibe-coding` skill applies and refines as real screens get built.
+This skill captures and scaffolds. The `softr-vibe-coding` skill applies and refines as real screens get built. (softr-vibe-coding's Step 1 can also generate a quick *raw* dembrandt DESIGN.md mid-build; run this skill when the project deserves the full foundation.)
 
 ## Important: foundation, not finished system
 
@@ -35,11 +38,11 @@ Every generated `DESIGN.md` opens with a preamble banner that states this explic
 
 By the end of a successful run, the project folder contains:
 
-1. **`./DESIGN.md`** — the canonical brand artifact (YAML frontmatter + prose sections), pre-tagged with Softr's tech stack so `softr-vibe-coding` can pick it up without re-asking.
-2. **`./custom-code-header.html`** — a snippet the user pastes into Softr's `Settings → Custom Code → Code inside header` to load Google Fonts and brand CSS variables once for the whole app (with `!important` on the `html, body` and `h1–h6` rules so brand fonts win against Softr's theme CSS).
-3. **`./assets/`** (Path A only) — brand assets downloaded from the source. Currently the logo wordmark (SVG preferred, PNG/JPG/WebP fallback). Both the **public CDN URL** (canonical reference for production blocks — Softr cannot resolve project-relative paths) and the **local backup file** (for manual upload to Softr's media library) are recorded in DESIGN.md's `assets` block.
+1. **`./DESIGN.md`** — the canonical brand artifact: dembrandt's emitted document as the base (kept verbatim), plus this skill's augmentation layers (banner, `tech_stack`, `fonts`, `assets`, `extraction_status`, Voice & Copy Register, Do's and Don'ts, Application Patterns, Known Gaps). Full anatomy: [design-md-format.md](design-md-format.md).
+2. **`./custom-code-header.html`** — a snippet the user pastes into Softr's `Settings → Custom Code → Code inside header` to load brand fonts and CSS variables once for the whole app (with `!important` so brand rules win against Softr's theme CSS).
+3. **`./assets/`** (Path A only) — the brand logo downloaded from the source. Both the **public CDN URL** (canonical reference for production blocks — Softr cannot resolve project-relative paths) and the **local backup file** (for manual upload to Softr's media library) are recorded in DESIGN.md's `assets` block.
 
-Both files (and the assets folder) are overwritten if they already exist. The skill warns the user before overwriting.
+All of these are overwritten if they already exist. The skill warns the user before overwriting.
 
 ## When this skill should run
 
@@ -61,11 +64,11 @@ Copy this checklist at the start of each invocation and check items off:
 - [ ] Step 1 — Ask the gate question (custom design? yes/no)
 - [ ] Step 2 — If yes, ask the path question (URL / catalog / file / Q&A)
 - [ ] Step 3 — Run the chosen path (load the relevant extractor reference)
-- [ ] Step 3b — (Path A only) Extract brand assets — download the logo (SVG preferred, PNG/JPG/WebP fallback) into `./assets/`, capture both the public CDN URL and the local backup path
-- [ ] Step 4 — Synthesize `DESIGN.md` from the extracted/provided tokens, with the preamble banner
+- [ ] Step 3b — (Path A only) Extract brand assets — pull the logo from dembrandt's extraction JSON, download it (SVG preferred, PNG/WebP/JPG fallback) into `./assets/`, capture both the public CDN URL and the local backup path
+- [ ] Step 4 — Assemble `DESIGN.md`: dembrandt base + augmentation layers, with the preamble banner
 - [ ] Step 4b — Append the Application Patterns scaffold using brand-token defaults
-- [ ] Step 5 — Mark every uncertain token with a confidence flag
-- [ ] Step 6 — Run the verification prompt for any flagged tokens
+- [ ] Step 5 — Set section-level confidence flags in `extraction_status`
+- [ ] Step 6 — Run the verification prompt for any flagged sections
 - [ ] Step 7 — Generate `custom-code-header.html`
 - [ ] Step 8 — Tell the user what was written, what to do next, and how to evolve the file
 
@@ -78,7 +81,7 @@ Look for `./DESIGN.md` in the project folder. If present:
 > 2. Replace it (start fresh)
 > 3. Update specific tokens (treat existing as a base, fill in flagged values)"
 
-If the user picks (1), exit cleanly. If (2), proceed to Step 1. If (3), load the existing file and skip to Step 6 (verification of flagged tokens only).
+If the user picks (1), exit cleanly. If (2), proceed to Step 1 — and if the existing file is a pre-v2 one (legacy schema — see [design-md-format.md](design-md-format.md#legacy-note-v1-files)), warn that hand-refined scaffolds and verified tokens in it are not carried over automatically. If (3), load the existing file and skip to Step 6 (verification of flagged sections only).
 
 ### Step 1 — The gate question
 
@@ -96,7 +99,7 @@ Treat "no" as a first-class choice. Many users want the downstream tool's defaul
 Ask exactly:
 
 > "How would you like to provide the design?
-> A. Extract from a website URL (recommended for real brands)
+> A. Extract from a website URL with dembrandt (recommended for real brands)
 > B. Use a pre-built file from the awesome-design-md catalog (fastest if your brand is already there)
 > C. Upload an existing `DESIGN.md` file
 > D. Guided Q&A (no extraction; I'll ask 8 questions)"
@@ -109,105 +112,50 @@ Load the relevant reference and follow it:
 
 | Path | Reference to load |
 |---|---|
-| A — URL extraction | [extractors/apify-pipeline.md](extractors/apify-pipeline.md) |
+| A — URL extraction (dembrandt) | [extractors/dembrandt-pipeline.md](extractors/dembrandt-pipeline.md) |
 | B — Catalog | [extractors/awesome-design-md-catalog.md](extractors/awesome-design-md-catalog.md) |
 | C — Upload | [design-md-format.md](design-md-format.md) (validate the uploaded file against the schema) |
 | D — Q&A | [extractors/guided-qa.md](extractors/guided-qa.md) |
 
-Each reference returns a structured set of tokens (colors, typography, etc.) plus per-token confidence flags. Hand those to Step 4.
+Path A returns the dembrandt base document, the full extraction JSON, lint findings, resolved font names, and a voice paragraph. Paths B/C/D return token sets in their own ways; map them into the same dembrandt-shaped frontmatter keys (see [design-md-format.md](design-md-format.md)) so every output has one format. Hand everything to Step 4.
 
 ### Step 3b — (Path A only) Extract brand assets
 
-After token extraction completes for Path A, run an asset-extraction pass. The goal is to get the brand's logo into `./assets/` and its public CDN URL into `DESIGN.md` so downstream Softr blocks have both: a public URL that Softr can hot-link, and a local backup the user can manually upload to Softr's media library if they prefer to host on Softr's own CDN.
+Get the brand's logo into `./assets/` and its public CDN URL into `DESIGN.md` so downstream Softr blocks have both: a public URL that Softr can hot-link, and a local backup the user can upload to Softr's media library if they prefer.
 
-**Why both URL and file matter:** Softr's runtime cannot resolve project-relative paths (`./assets/foo.svg`) inside Vibe Coding blocks — image `src` attributes must be absolute URLs. The public CDN URL is therefore the canonical reference for production code. The local file exists as a backup for the case where the source CDN URL becomes unstable (re-published, expired token, CMS migration) or the user wants to self-host.
+**Why both URL and file matter:** Softr's runtime cannot resolve project-relative paths (`./assets/foo.svg`) inside Vibe Coding blocks — image `src` attributes must be absolute URLs. The public CDN URL is therefore the canonical reference for production code. The local file is the backup for when the source URL becomes unstable (re-published, expired token, CMS migration) or the user wants to self-host.
 
 **Procedure** (Path A only — paths B/C/D handle assets through their own routes):
 
-1. Run a targeted Apify `apify/web-scraper` page function that returns all `<img>` URLs along with `alt` text, dimensions, and class names. Reuse the Tier 2b infrastructure with this `pageFunction`:
+1. Read the **`logo`, `logoInstances`, and `favicons` keys from dembrandt's extraction JSON** (already in hand from Step 3 — no separate scrape). They carry source URLs, dimensions, `type` (`wordmark` / `logomark` / `combination`), alt text, and safe-zone data.
 
-   ```js
-   async function pageFunction(context) {
-     var images = Array.from(document.querySelectorAll('img'))
-       .map(function(i) {
-         return {
-           src: i.src,
-           alt: i.alt,
-           width: i.naturalWidth,
-           height: i.naturalHeight,
-           classList: (i.className && typeof i.className === 'string') ? i.className.slice(0, 80) : null
-         };
-       })
-       .filter(function(i) { return i.src && !i.src.startsWith('data:'); });
-     var svgInline = Array.from(document.querySelectorAll('svg'))
-       .filter(function(s) {
-         var aria = s.getAttribute('aria-label') || '';
-         var role = s.getAttribute('role') || '';
-         return aria.toLowerCase().indexOf('logo') !== -1 || role === 'img';
-       })
-       .map(function(s) { return { outerHTML: s.outerHTML.slice(0, 4000) }; });
-     return { url: context.request.url, images: images, svgInline: svgInline };
-   }
-   ```
+2. Pick the **logo wordmark**: prefer the entry dembrandt typed as `wordmark`; among alternatives, prefer alt/filename containing the brand name, then "logo". Never auto-save the icon mark (`logomark`) as the primary asset.
 
-2. Identify the **logo wordmark** from the returned image list using these heuristics, in order:
-
-   - `alt` text contains the brand name (case-insensitive substring match)
-   - `alt` text contains "logo"
-   - `src` contains "logo" (filename or path)
-   - First non-payment-method, non-icon image on the page (filter out `payment-method`, `icon`, `favicon`, `social` class names and small dimensions ≤ 64×64)
-
-   If multiple candidates remain, prefer SVG over raster, then highest resolution.
-
-3. Also check the inline SVG list — some brands ship the wordmark as inline `<svg>` rather than `<img>`. If a logo SVG is found inline, save its `outerHTML` to `./assets/<brand-slug>-wordmark.svg` and treat the live page URL itself as the "public URL" placeholder (record this with a note that hot-linking inline SVG isn't possible — the user should self-host).
-
-4. **Format preference** — when multiple sources for the same logo exist, prefer in this order:
+3. **Format preference** — when multiple sources for the same logo exist, prefer in this order:
 
    1. **SVG** (vector, scales perfectly, smallest file)
    2. **PNG with transparency** (raster, lossless, supports alpha)
-   3. **WebP** (raster, smaller than PNG but less universal browser support inside email clients)
+   3. **WebP** (raster, smaller than PNG but less universal support)
    4. **JPG** (raster, no transparency — last resort)
 
-5. **Download** the chosen logo to `./assets/<brand-slug>-wordmark.<ext>` using the file extension from the source URL or the response `Content-Type` header.
+4. **Download** the chosen logo to `./assets/<brand-slug>-wordmark.<ext>` (`mkdir -p ./assets` first; `curl -sSL -o <path> <url>`). If the source URL has query parameters (e.g. `?width=2400&optimize=medium`), strip them from the local filename but **keep them in the recorded `public_url`** — the CDN may need them to serve the right variant.
 
-   - If the source URL has query parameters (e.g., `?width=2400&optimize=medium` from Weebly's CDN), strip them when constructing the local filename but **keep them in the recorded `public_url`** — they may matter for the CDN to serve the right variant.
-   - Use `curl -sSL -o <path> <url>` for the download.
-   - Create `./assets/` if it doesn't exist (`mkdir -p`).
+5. **Record both values** in DESIGN.md's `assets` block per the schema in [design-md-format.md](design-md-format.md#assets-path-a-only).
 
-6. **Record both values** in DESIGN.md's `assets` block (see [design-md-format.md](design-md-format.md) for the schema):
+6. **If it fails** (no plausible logo in the extraction, download blocked): apply the failure-modes table in [extractors/dembrandt-pipeline.md](extractors/dembrandt-pipeline.md#logo--assets-from-the-extraction-json), and if still stuck set `assets.status: needs-verification`, record an empty `logo_wordmark`, note it in `Known Gaps`, and ask for the logo URL in the Step 6 prompt.
 
-   ```yaml
-   assets:
-     status: extracted
-     logo_wordmark:
-       public_url: "<canonical CDN URL — what blocks should reference>"
-       public_url_note: "Canonical reference for production use. Softr cannot resolve project-relative paths."
-       local_backup: "./assets/<brand-slug>-wordmark.<ext>"
-       local_backup_note: "Downloaded copy for manual upload to Softr's media library if/when you'd rather host on Softr's own CDN."
-       format: "<SVG | PNG | WebP | JPG> — <one-line note about why this format>"
-       color: "<dominant logo color, ideally one of the extracted color tokens>"
-       usage: "<short usage hint, e.g., 'Use as <img src=\"<public_url>\" alt=\"<brand>\"/> in nav lockups.'>"
-   ```
+7. **Other assets** (hero photos, decorative imagery, brand pattern fills) are **not extracted by default**. Only the logo wordmark is universally needed. If the source has a clearly-branded hero image and the user asked for it, follow the same download + record pattern.
 
-7. **If asset extraction fails** (no plausible logo image found, page blocks scraping, etc.), set `assets.status: needs-verification` and record an empty `logo_wordmark` block with a note in `Known Gaps in This Extraction`. Surface this in the Step 6 verification prompt — ask the user to paste the logo URL manually.
+### Step 4 — Assemble `DESIGN.md` (base + layers, with preamble)
 
-8. **Other assets** (hero photos, decorative imagery, brand pattern fills) are **not extracted by default**. Only the logo wordmark is universally needed for downstream blocks. If the source page has a clearly-branded hero image and the user has signalled they want it captured, follow the same pattern (download + record `public_url` + `local_backup`).
+Use [design-md-format.md](design-md-format.md) as the spec. Assembly order:
 
-This step does not run for Paths B/C/D:
+1. **Preamble banner** at the very top, above the YAML frontmatter (template below). Required on every generated DESIGN.md, no exceptions.
+2. **Base document**: dembrandt's `generate_design_md` output, verbatim — frontmatter keys and body sections untouched. One permitted edit: keep `description`'s "Design tokens extracted from `<url>`" as the first sentence and **append 2–3 brand-mood sentences** after it.
+3. **Appended frontmatter keys**: `version: 2`, `target_platform`, `downstream_skill`, `tech_stack`, `fonts` (real font names resolved from the body's Font URLs — never trust computed `fontFamily` blindly), `assets` (Path A), `extraction_status`.
+4. **Appended body sections**: Voice & Copy Register, Do's and Don'ts, Application Patterns (Step 4b), Known Gaps in This Extraction, Evolving this file. If extraction caught a misleading signal (a lying utility class, a fallback-masked font name), document the catch in the Typography prose so downstream consumers stay honest.
 
-- **Path B (catalog)** — the catalog entry already includes its own asset references; reuse them as-is.
-- **Path C (upload)** — the uploaded `DESIGN.md` either contains an `assets` block or doesn't; if missing, prompt the user during Step 6 verification.
-- **Path D (Q&A)** — the Q&A explicitly asks for the logo URL as one of its 8 questions; record what the user provides without download (the user can drop the file into `./assets/` themselves).
-
-### Step 4 — Synthesize `DESIGN.md` (with preamble)
-
-Use [design-md-format.md](design-md-format.md) as the schema. Populate:
-
-- **Preamble banner** at the very top of the file, above the YAML frontmatter (see template below). This is required on every generated DESIGN.md, no exceptions.
-- **YAML frontmatter:** name, description, extraction_status, tech_stack, colors, typography, rounded, spacing, elevation, components, assets (Path A only — see Step 3b).
-- **Prose sections:** Overview, Voice & Copy Register, Colors, Typography, Layout, Elevation, Components, Do's and Don'ts, Known Gaps in This Extraction.
-
-Write to `./DESIGN.md`. Do not paraphrase — use the exact field names and section headings from the template.
+Write to `./DESIGN.md`. Do not paraphrase the base — it ships as emitted. Mechanically, the merge is: banner first, then ONE frontmatter block — the base's opening `---`, its keys, the appended keys, one closing `---` (never two stacked frontmatter blocks) — then the base's body sections, then the appended body sections after the base's last section.
 
 **Preamble banner template** (paste at the very top, before any frontmatter):
 
@@ -215,8 +163,8 @@ Write to `./DESIGN.md`. Do not paraphrase — use the exact field names and sect
 > ⚠️ **Softr-specific brand foundation, not a complete app design system.**
 >
 > Extracted from `<source>` on `<YYYY-MM-DD>` for use in a Softr app. The
-> colors, typography, voice, and marketing-page components below come directly
-> from the source and are ready to use. **Application patterns** (modals,
+> colors, typography, spacing, and components below were observed by dembrandt
+> on the source and are ready to use. **Application patterns** (modals,
 > status pills, empty/loading/error states, page-header lockups, form-field
 > cards, etc.) are not present in the source and have been **scaffolded with
 > brand-token defaults using Softr's stack** (shadcn/ui, Tailwind, lucide-react,
@@ -238,7 +186,7 @@ Substitute `<source>` with the actual input (URL for Path A, catalog entry for P
 
 ### Step 4b — Append Application Patterns scaffold
 
-Load [references/app-patterns-stubs.md](references/app-patterns-stubs.md) and append the entire Application Patterns section after the Components section in the prose body. Substitute every `{colors.x}` / `{typography.x}` / `{rounded.x}` reference with the actual extracted token names so the stubs are immediately usable.
+Load [references/app-patterns-stubs.md](references/app-patterns-stubs.md) and append the entire Application Patterns section after the appended `## Do's and Don'ts` section, before `## Known Gaps in This Extraction` (per the anatomy in [design-md-format.md](design-md-format.md)). Substitute every `{colors.x}` / `{typography.x}` / `{rounded.x}` reference with the file's actual token names — dembrandt vocabulary: `{colors.primary}`, `{colors.on-surface}`, `{colors.surface}`, `{typography.headline-md}`, `{typography.label-lg}`, `{rounded.lg}`, `{rounded.full}` — so the stubs are immediately usable.
 
 The scaffold covers the categories that are nearly universal in app UI but cannot be extracted from a marketing source:
 
@@ -257,41 +205,42 @@ The scaffold covers the categories that are nearly universal in app UI but canno
 - Interaction states (hover / focus / disabled / loading-button)
 - Toast / notification convention
 
-Each stub is marked `status: "scaffolded"` (a fourth confidence flag — see Step 5). Each section ends with a one-line "Refine when you build:" hint pointing to the screen type that will need it.
+Each stub is marked `status: "scaffolded"`. Each section ends with a one-line "Refine when you build:" hint pointing to the screen type that will need it.
 
 Do not skip this step. It is the highest-leverage difference between a `DESIGN.md` that gets used and one that gets reverse-engineered from the JSX six weeks later.
 
-### Step 5 — Mark every uncertain token
+### Step 5 — Set section-level confidence flags
 
-For each token in the YAML frontmatter, set `status` to one of four values per [references/confidence-flags.md](references/confidence-flags.md):
+Fill `extraction_status` with one flag per section, per [references/confidence-flags.md](references/confidence-flags.md):
 
-- `extracted` — Pulled directly from the source. High confidence.
-- `inferred` — Derived from indirect signals (e.g. class counts, framework detection). Medium confidence; may be wrong.
-- `needs-verification` — Could not be captured. The skill must prompt the user before locking.
-- `scaffolded` — App pattern stub generated in Step 4b using brand-token defaults. Not extracted from the source, not yet refined by the team. Indicates "starting point — revisit when building."
+- `extracted` — observed directly (dembrandt tokens; hero copy quoted from the live site; logo from the extraction JSON). High confidence.
+- `inferred` — derived from indirect signals. Medium confidence; may be wrong.
+- `needs-verification` — could not be captured. The skill must prompt the user before locking.
+- `scaffolded` — app pattern stubs generated in Step 4b. Intentional placeholders — the team refines them later.
+- `partial` — section-level only: some values observed, others inferred or missing. Itemize the gaps in `Known Gaps`; fires the optional (inferred-style) Step 6 prompt.
 
-Always set `status` explicitly. Never leave it blank.
+Dembrandt frontmatter tokens carry **no per-token status** (they are observed values by definition; restructuring them would break the base shape) — confidence lives at section level, with specifics itemized in `Known Gaps`. Always set every `extraction_status` entry explicitly; never leave one blank.
 
-`scaffolded` tokens do **not** trigger the verification prompt in Step 6 (they're intentional placeholders the team will refine later). Only `inferred` and `needs-verification` tokens trigger that prompt.
+`scaffolded` sections do **not** trigger the verification prompt in Step 6. Only `inferred`, `partial`, and `needs-verification` do.
 
 ### Step 6 — Verification prompt
 
-If any tokens are flagged `needs-verification` or `inferred`, ask the user one consolidated prompt:
+If any section is flagged `needs-verification`, `inferred`, or `partial`, ask the user one consolidated prompt:
 
 > "I extracted X confidently but couldn't fully confirm:
-> - `<token name>` (currently: `<inferred value>`, status: `<flag>`)
+> - `<section / token>` (currently: `<value or guess>`, status: `<flag>`)
 > - …
 > Paste the correct value, confirm the inferred default, or say 'skip' to leave the flag in place."
 
-Update `./DESIGN.md` in place with whatever the user provides. Do not re-run extractors — just edit the file.
+Include anything severe from dembrandt's `get_findings` lint here too (contrast failures, token collisions). Update `./DESIGN.md` in place with whatever the user provides. Do not re-run the extraction — just edit the file.
 
 ### Step 7 — Generate `custom-code-header.html`
 
 Use [references/custom-code-header.md](references/custom-code-header.md) to build the snippet. It should contain:
 
-- Google Fonts `<link>` tags for any fonts in the DESIGN.md that are available on Google Fonts.
-- A `<style>` block defining `:root` CSS custom properties for brand tokens (`--brand-primary`, `--brand-text`, `--brand-radius-md`, etc.).
-- A single `font-family` rule on `html, body` if the brand specifies a body font.
+- Font loading for the fonts in the `fonts` block: Google Fonts `<link>` tags when the font is on Google Fonts, or the open-source substitute when it's paid.
+- A `<style>` block defining `:root` CSS custom properties for brand tokens (`--brand-primary`, `--brand-on-surface`, `--brand-radius-md`, etc.) from the DESIGN.md `colors`/`rounded` blocks.
+- `html, body` and `h1–h6` rules applying the brand fonts/colors with `!important` (Softr's theme CSS loads after this snippet).
 
 Save to `./custom-code-header.html`.
 
@@ -299,17 +248,17 @@ Save to `./custom-code-header.html`.
 
 Tell the user:
 
-1. What was written and where (full paths, computer:// links if relevant).
-2. Which tokens are confidence-flagged and may need their attention. Call out separately: how many tokens are `extracted`, `inferred`, `needs-verification`, and `scaffolded` so they understand the file's mix.
+1. What was written and where (full paths).
+2. Which sections are confidence-flagged and may need attention — how many are `extracted`, `inferred`, `needs-verification`, and `scaffolded`, so they understand the file's mix. Include dembrandt's findings scores when Path A ran.
 3. **The Softr workflow handoff** — the exact next step:
-   > "Step 1 (this skill) is done. To continue:
+   > "The brand foundation is done. To continue:
    > 1. Paste `custom-code-header.html` into your Softr app: **Settings → Custom Code → Code inside header**, then save and publish.
    > 2. Run the **`softr-vibe-coding`** skill to generate brand-aligned Vibe Coding blocks from this DESIGN.md. Trigger it with something like 'build me a Softr block for X' or 'create a claims dashboard.' The skill auto-reads `./DESIGN.md` and applies the tokens.
    >    - *Not installed yet?* Run `npx softr-vibe-coding@latest init` in your terminal. It installs the skill into `~/.claude/skills/` and keeps it auto-updated on each Claude Code session.
    >
-   > That's the whole pipeline: brand → blocks. No other skills needed."
+   > That's the whole pipeline: brand → blocks."
 4. The evolution path:
-   > "After you've built 2–3 real Softr blocks, the patterns you actually shipped will diverge from the scaffolds. At that point, refine the affected `scaffolded` tokens in DESIGN.md to match what you built and promote them to `extracted`. A future companion skill (`building-design-md-refine`) will automate this by reading your block JSX and proposing refinements."
+   > "After you've built 2–3 real Softr blocks, the patterns you actually shipped will diverge from the scaffolds. At that point, refine the affected `scaffolded` stubs in DESIGN.md to match what you built and promote them to `extracted`. To re-check the shipped app against the brand later, dembrandt's `compute_drift` can score the published Softr app against a fresh extraction of the brand site."
 
 End the skill there. Do not generate any UI components — that's `softr-vibe-coding`'s job, and running it is the user's next explicit action.
 
@@ -317,20 +266,22 @@ End the skill there. Do not generate any UI components — that's `softr-vibe-co
 
 **Do:**
 
-- Always ask the gate question (Step 1) before running any extractor. The user must opt in.
-- Always set `status` flags explicitly on every token.
-- Always save to the project folder, never to the temporary outputs directory.
-- Always run the verification prompt (Step 6) when flags fire — do not silently leave `needs-verification` tokens in the file.
-- Always treat the awesome-design-md catalog as the fastest path when applicable — check for catalog availability before running Apify.
+- Always ask the gate question (Step 1) before running any extraction. The user must opt in.
+- Always set every `extraction_status` entry explicitly.
+- Always save to the project folder, never to a temporary outputs directory.
+- Always run the verification prompt (Step 6) when flags fire — do not silently leave `needs-verification` sections in the file.
+- Always check the awesome-design-md catalog first when the brand might be there — a hit skips extraction entirely.
+- Always crawl multiple pages on Path A (`pages: 3`–`5`) — single-page extractions are noisy.
 
 **Never:**
 
 - Never invent a hex color, font name, or CSS value without flagging it. If extraction failed, mark it `needs-verification` and prompt.
-- Never run extraction tools (Apify, Exa) before the user picks Path A. Paths B/C/D do not need them.
+- Never run dembrandt extraction before the user picks Path A. Paths B/C/D never require it (guided Q&A may optionally use `get_color_palette` when the user offers a URL and dembrandt is already set up) — and never extract a site the user doesn't own or have permission to analyze.
+- Never restructure the dembrandt base — no renaming its frontmatter keys, no per-token status objects inside them, no reordering its body sections. Additions only (plus the `description` mood-append).
 - Never produce Softr Vibe Coding blocks, JSX, or any UI code. That is a different skill's job.
-- Never overwrite an existing `DESIGN.md` without asking the user first (Step 0).
-- Never paste API keys (Apify, Exa) into `DESIGN.md` or `custom-code-header.html`. Keys live in MCP config only.
-- Never claim the brand is one thing (e.g. "serif-dominant") based on Tailwind class counts alone. Tailwind utility names lie. See [references/tailwind-class-trap.md](references/tailwind-class-trap.md).
+- Never trust computed `fontFamily` values blindly — a generic stack (`ui-sans-serif`) with real webfonts in Font URLs means the brand font is hiding. Resolve names via the Font URLs (see [extractors/dembrandt-pipeline.md](extractors/dembrandt-pipeline.md#resolving-real-font-names-the-computed-fontfamily-trap)).
+- Never claim the brand is one thing (e.g. "serif-dominant") from class names or weak signals alone — only computed styles tell the truth; hedge and verify.
+- Never copy v1's retired bundler constraints ("no `?.`", "no `??`") into `tech_stack` — the current platform compiles modern TypeScript (verified 2026-08-25).
 
 ## When to load references
 
@@ -338,17 +289,13 @@ Reference files are loaded on demand. Load them when the indicated condition is 
 
 | File | When to load |
 |---|---|
-| [design-md-format.md](design-md-format.md) | Always, before writing `DESIGN.md` (Step 4). |
+| [design-md-format.md](design-md-format.md) | Always, before assembling `DESIGN.md` (Step 4). |
 | [references/app-patterns-stubs.md](references/app-patterns-stubs.md) | Always, before appending the Application Patterns section (Step 4b). |
 | [references/intake-flow.md](references/intake-flow.md) | If the user's intent is unclear and you need to disambiguate. |
-| [extractors/apify-pipeline.md](extractors/apify-pipeline.md) | When user picks Path A (Step 3A). |
-| [extractors/apify-mcp-install.md](extractors/apify-mcp-install.md) | When the Apify MCP is not connected and Path A is requested. |
-| [extractors/apify-actor-approval.md](extractors/apify-actor-approval.md) | When `apify/web-scraper` returns "requires full access". |
-| [extractors/exa-mcp.md](extractors/exa-mcp.md) | When voice / mood / copy-register extraction is requested. |
+| [extractors/dembrandt-pipeline.md](extractors/dembrandt-pipeline.md) | When user picks Path A (Step 3) — setup, extraction, fonts, voice, logo, failure handling. |
 | [extractors/awesome-design-md-catalog.md](extractors/awesome-design-md-catalog.md) | When user picks Path B. |
 | [extractors/guided-qa.md](extractors/guided-qa.md) | When user picks Path D. |
-| [references/confidence-flags.md](references/confidence-flags.md) | When setting `status` on any token (Step 5). |
-| [references/tailwind-class-trap.md](references/tailwind-class-trap.md) | When the target site is Tailwind-based (detected via tech-stack scanner). |
+| [references/confidence-flags.md](references/confidence-flags.md) | When setting `extraction_status` (Step 5). |
 | [references/google-fonts-substitutes.md](references/google-fonts-substitutes.md) | When the brand specifies a paid / licensed font. |
 | [references/custom-code-header.md](references/custom-code-header.md) | Always, in Step 7. |
 
@@ -356,41 +303,41 @@ Reference files are loaded on demand. Load them when the indicated condition is 
 
 Concrete examples of what the skill produces — not abstract rules.
 
-**Path A success (URL extraction worked end to end):**
+**Path A success (dembrandt extraction worked end to end):**
 
 ```yaml
 extraction_status:
-  colors: complete (via Apify automation-lab/css-color-extractor)
-  framework: complete (via Apify misterkhan/website-tech-stack-scanner)
-  voice_and_mood: complete (via Exa web_fetch_exa)
-  typography_specific_fonts: complete (via Apify apify/web-scraper Tier 2b)
-  spacing_radius_shadows: needs-verification
+  tokens: extracted (dembrandt v0.30.0, 5-page crawl of example.com)
+  fonts: extracted (resolved from Font URLs — computed fontFamily was a generic fallback)
+  voice_and_mood: extracted (hero + pricing copy read from the live site)
+  assets: extracted (wordmark SVG from the extraction's logo key)
+  app_patterns: scaffolded
 ```
 
-User report: "DESIGN.md written. Color, framework, voice, and typography all extracted directly from the live site. Spacing/radius/shadow tokens are inferred from typical Astro+Tailwind patterns and need your spot-check. Run `/verify-brand` if you want to confirm them now."
+User report: "DESIGN.md written. Tokens observed across 5 merged pages; dembrandt's lint scored consistency 91 / contrast 88, with one AA contrast warning on the primary — flagged in Known Gaps. Fonts resolved from the site's webfont files. Say the word if you want to spot-check the flagged contrast pair now."
 
 **Path C success (user uploaded their own DESIGN.md):**
 
 ```yaml
 extraction_status:
-  colors: extracted (from uploaded file)
-  typography: extracted (from uploaded file)
+  tokens: extracted (from uploaded file)
   voice_and_mood: needs-verification (not present in uploaded file)
+  app_patterns: scaffolded (appended — upload had none)
 ```
 
-User report: "Uploaded `airbnb-DESIGN.md` parsed against the schema. Colors and typography are good. Voice section was missing — fill it in manually or paste a hero paragraph from the brand and I'll synthesize it."
+User report: "Uploaded `airbnb-DESIGN.md` parsed and augmented. Colors and typography are good. Voice section was missing — fill it in manually or paste a hero paragraph from the brand and I'll synthesize it."
 
 **Path D fallback (user has nothing):**
 
 ```yaml
 extraction_status:
-  colors: extracted (from Q&A)
-  typography: extracted (from Q&A — single brand color, soft radius, system sans, flat shadow vibe)
+  tokens: extracted-by-user (Q&A — single brand color, soft radius, system sans)
   voice_and_mood: extracted (from Q&A — mood: friendly-consumer)
-  spacing_radius_shadows: inferred (from radius vibe)
+  fonts: inferred (from Q&A vibe answers)
+  app_patterns: scaffolded
 ```
 
-User report: "Built `DESIGN.md` from your 8 answers. This is a minimum-viable brand kit; for higher fidelity, run me again with a website URL or paste your full brand guide."
+User report: "Built `DESIGN.md` from your 8 answers. This is a minimum-viable brand kit; for higher fidelity, run me again with a website URL and I'll extract the real tokens with dembrandt."
 
 ## Skill ends
 

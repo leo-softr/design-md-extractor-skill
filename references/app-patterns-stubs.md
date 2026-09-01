@@ -11,30 +11,31 @@ Scaffolds for app patterns that cannot be extracted from a marketing-source bran
 - **Date formatting**: `date-fns` (`import { format } from "date-fns"`)
 - **Data hooks**: `@/lib/datasource` (`useRecords`, `useRecordCreate`, `useRecordUpdate`, `q.select`)
 - **User context**: `@/lib/user` (`useCurrentUser`)
-- **Bundler constraints**: no `?.`, no `??`, named React imports only (`import { useState } from "react"`), no `import React from 'react'`
+- **Language**: modern TypeScript compiles (`?.`, `??`, arrows, generics — verified live 2026-08-25); named React imports only (`import { useState } from "react"`), no `import React from 'react'`
 - **Field access**: `record.fields.aliasName`, never `record.aliasName`
-- **Outer wrapper** (every block): `<div className="container py-X"><div className="content">...</div></div>`
+- **Outer wrapper** (every block): `<div className="container py-0"><div className="content">...</div></div>` — or a deliberate full-bleed layout
+- **Token vocabulary**: the `{colors.x}`/`{typography.x}`/`{rounded.x}` placeholders below use illustrative names; substitute the file's actual token names at generation time — dembrandt vocabulary is `{colors.primary}` / `{colors.on-surface}` / `{colors.surface}` / `{typography.headline-md}` / `{typography.label-lg}` / `{rounded.lg}` / `{rounded.full}`
 
 Downstream `softr-vibe-coding` writes against this exact stack. The stubs below name shadcn components and lucide icons explicitly so the handoff is unambiguous.
 
 ## When to load this file
 
-Always, in Step 4b, after the main DESIGN.md prose has been written. The skill substitutes `{colors.x}`, `{typography.x}`, `{rounded.x}`, etc. with the actual extracted values, then appends the rendered section to the prose body, before the `## Do's and Don'ts` section.
+Always, in Step 4b, after the main DESIGN.md prose has been written. The skill substitutes `{colors.x}`, `{typography.x}`, `{rounded.x}`, etc. with the file's actual token names, then appends the rendered section to the prose body **after the `## Do's and Don'ts` section, before `## Known Gaps in This Extraction`** (per the v2 anatomy in [../design-md-format.md](../design-md-format.md)).
 
 ## Substitution rules
 
 When the skill loads this file:
 
-1. Replace `{colors.primary}` etc. with the actual hex values from the extracted `colors` block.
-2. Replace `{rounded.x}` etc. with the actual radius values from the extracted `rounded` block.
-3. Replace `{typography.x}` etc. with the actual typography references.
-4. If a referenced token is missing from the extraction (e.g., the brand has no `surface-lavender-pale`), substitute the closest available token (e.g., the lightest extracted surface) and add a note in the stub: `# fallback: extracted has no surface-lavender-pale, using {colors.surface-soft}`.
-5. Mark every stub token in the frontmatter with `status: "scaffolded"`.
+1. Replace `{colors.primary}` etc. with the file's actual token **names** from the `colors` block (keep the `{...}` reference form — downstream tools resolve it); inline a raw hex only when no matching role exists (rule 4).
+2. Replace `{rounded.x}` etc. with the actual radius token names from the `rounded` block.
+3. Replace `{typography.x}` etc. with the actual typography token names.
+4. If a referenced token is missing from the extraction (e.g., the brand has no `surface-lavender-pale`), substitute the closest available token (e.g., the lightest extracted surface) and add a note in the stub: `# fallback: extracted has no surface-lavender-pale, using {colors.surface}`.
+5. Mark each rendered stub with a `status: "scaffolded"` line inside its own body section, and set `extraction_status.app_patterns: scaffolded` in the frontmatter — **never add stub tokens to the frontmatter** (the base token blocks are dembrandt-owned and never restructured).
 6. Keep the "Refine when you build:" hints intact — they're guidance for the team, not metadata.
 
 ## Section to append
 
-Render and append the following section verbatim (after substitution) to the prose body of the DESIGN.md, between the `## Components` section and the `## Do's and Don'ts` section.
+Render and append the following section verbatim (after substitution) to the prose body of the DESIGN.md, after the `## Do's and Don'ts` section and before `## Known Gaps in This Extraction`. **The appendable region ends at the closing `---` after the last stub** — the `## Next step` and `## Evolving this file` sections further below are templates: the first is agent guidance for SKILL.md Step 8 (not appended), the second is the canonical text for the DESIGN.md's own appended `## Evolving this file` section (append it minus the future-skill note).
 
 ---
 

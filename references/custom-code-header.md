@@ -1,6 +1,6 @@
 # Generating `custom-code-header.html`
 
-The skill produces two artifacts. The second one is `custom-code-header.html` — a small HTML/CSS snippet the user pastes into Softr's `Settings → Custom Code → Code inside header` so brand tokens are loaded once at the app level and inherited by every block.
+The skill produces two files (plus `./assets/` on Path A). The second file is `custom-code-header.html` — a small HTML/CSS snippet the user pastes into Softr's `Settings → Custom Code → Code inside header` so brand tokens are loaded once at the app level and inherited by every block.
 
 This file is a Softr-specific output. Other downstream consumers (Webflow, custom React) may not need it. The skill should still produce it whenever a custom design is configured, since it's harmless if unused.
 
@@ -28,27 +28,27 @@ The full snippet has three parts:
 <style>
   :root {
     --brand-primary: <hex>;
-    --brand-primary-pressed: <hex>;
-    --brand-ink: <hex>;
-    --brand-canvas: <hex>;
-    --brand-destructive: <hex>;
+    --brand-secondary: <hex>;
+    --brand-surface: <hex>;
+    --brand-on-surface: <hex>;
+    --brand-error: <hex>;
     --brand-radius-sm: <px>;
     --brand-radius-md: <px>;
   }
   html, body {
     font-family: <font-stack> !important;
-    color: var(--brand-ink) !important;
-    background-color: var(--brand-canvas) !important;
+    color: var(--brand-on-surface) !important;
+    background-color: var(--brand-surface) !important;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: <display-font-stack> !important;
     font-weight: 600 !important;
-    color: var(--brand-ink) !important;
+    color: var(--brand-on-surface) !important;
   }
 </style>
 ```
 
-The `!important` flags on the `html, body` and `h1–h6` rules are mandatory for Softr — Softr's theme CSS loads after this snippet and would otherwise override the brand fonts on built-in surfaces (navigation, login forms, account pages, list blocks). See Step 5 for the full explanation.
+The `!important` flags on the `html, body` and `h1–h6` rules are mandatory for Softr — Softr's theme CSS loads after this snippet and would otherwise override the brand fonts on built-in surfaces (navigation, login forms, account pages, list blocks). See Step 5 for the full explanation. (The `:root` custom properties in this outline — and in the Step 3 and Step 4 examples below — omit `!important` for readability only; the policy in Step 5 mandates it on every line of the real file.)
 
 ## Generating from DESIGN.md
 
@@ -56,10 +56,10 @@ Read `./DESIGN.md` and synthesize the snippet:
 
 ### Step 1 — Identify the font(s) to load
 
-Look at the `typography` block. For each font:
+Read the **`fonts` frontmatter block** (v2 files — the real family names resolved from the extraction's Font URLs; never the computed `typography.*.fontFamily` values, which can be generic fallbacks). In legacy v1 files the same information lives in `typography.font-*-name`. For each font:
 
-- If `font-*-name` is on Google Fonts (Inter, Manrope, Public Sans, Fraunces, etc.), generate a `<link>` for it. Pull the weights actually used from the hierarchy table (display weights + body weights).
-- If `font-*-name` is a paid foundry font (PPNeueMontreal, Söhne, etc.), use the `font-*-open-source-substitute` instead. Add a comment noting the substitution.
+- If `fonts.*-name` is on Google Fonts (Inter, Manrope, Public Sans, Fraunces, etc.), generate a `<link>` for it. Pull the weights actually used from the `typography` tokens (display weights + body weights).
+- If `fonts.*-name` is a paid foundry font (PPNeueMontreal, Söhne, etc.), use `fonts.*-open-source-substitute` instead. Add a comment noting the substitution. (Don't hot-link the brand's own `.woff2` files from the Font URLs — font files are CORS-gated cross-origin and licensed fonts may not permit it.)
 - If both display and body fonts are the same Google Fonts entry, generate one `<link>` with combined weights.
 
 ### Step 2 — Build the Google Fonts URL
@@ -83,32 +83,32 @@ For multiple fonts, use one `<link>` per font (cleaner than the combined `&famil
 For each token in the DESIGN.md `colors` block, add a `--brand-*` variable on `:root`. Naming convention: convert `colors.foo-bar` to `--brand-foo-bar`.
 
 ```yaml
-# DESIGN.md
+# DESIGN.md (v2 — dembrandt roles)
 colors:
-  primary: "#e82d42"
-  primary-pressed: "#ce2439"
-  ink: "#120b0c"
-  canvas: "#ffffff"
-  destructive: "#ef4444"
+  primary: "#E82D42"
+  secondary: "#FFDD00"
+  surface: "#FFFFFF"
+  on-surface: "#120B0C"
+  error: "#EF4444"
 ```
 
 becomes:
 
 ```css
 :root {
-  --brand-primary: #e82d42;
-  --brand-primary-pressed: #ce2439;
-  --brand-ink: #120b0c;
-  --brand-canvas: #ffffff;
-  --brand-destructive: #ef4444;
+  --brand-primary: #E82D42;
+  --brand-secondary: #FFDD00;
+  --brand-surface: #FFFFFF;
+  --brand-on-surface: #120B0C;
+  --brand-error: #EF4444;
 }
 ```
 
-Include the four required colors at minimum (`primary`, `ink`, `canvas`, `destructive`) plus any additional brand-significant colors (tint ramp, surface variants, accents). Skip colors the brand uses but doesn't ship as a token (e.g. one-off hex values used only on a single page).
+Include every role the file's `colors` block carries. Role mapping for the applied rules below: text color ← `on-surface` (v1: `ink`), page background ← `surface` (v1: `canvas`), destructive ← `error` (v1: `destructive`). Skip colors the brand uses but doesn't ship as a token (one-off hex values used on a single page).
 
 ### Step 4 — Define the radius and spacing variables (optional but recommended)
 
-If the DESIGN.md has a `rounded` block with `extracted` or `extracted-by-user` status, include the dominant radius values:
+If the DESIGN.md has a `rounded` block and `extraction_status.tokens` is `extracted` or `extracted-by-user` (dembrandt-observed radii qualify), include the dominant radius values:
 
 ```css
 :root {
@@ -119,7 +119,7 @@ If the DESIGN.md has a `rounded` block with `extracted` or `extracted-by-user` s
 }
 ```
 
-Skip if `rounded.status` is `inferred` or `needs-verification` — let downstream tools use their defaults rather than locking inferred values into the global CSS.
+Skip if the section is `inferred` or `needs-verification` — let downstream tools use their defaults rather than locking inferred values into the global CSS.
 
 ### Step 5 — Set the body, heading, and background with `!important`
 
@@ -128,17 +128,17 @@ Add rules applying the body font stack to `html, body`, the display font stack t
 ```css
 html, body {
   font-family: 'Inter', -apple-system, system-ui, sans-serif !important;
-  color: var(--brand-ink) !important;
-  background-color: var(--brand-canvas) !important;
+  color: var(--brand-on-surface) !important;
+  background-color: var(--brand-surface) !important;
 }
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Inter', -apple-system, system-ui, sans-serif !important;
   font-weight: 600 !important;
-  color: var(--brand-ink) !important;
+  color: var(--brand-on-surface) !important;
 }
 ```
 
-Use `font-body-fallback-stack` for the body rule and `font-display-fallback-stack` for the heading rule (or the open-source substitute followed by the system stack if the source font is paid). If body and display use the same font, both rules can reference the same family.
+Use `fonts.body-fallback-stack` for the body rule and `fonts.display-fallback-stack` for the heading rule (or the open-source substitute followed by the system stack if the source font is paid). If body and display use the same font, both rules can reference the same family.
 
 The `background-color` `!important` flag is what makes the brand canvas extend to the entire page — Softr's theme defaults the body to white. Without `!important`, the canvas variable is set on `:root` but no element actually paints with it on Softr's chrome (header strip between Softr nav and the first block, page background outside the block's max-width). Users see white margins around their cream-canvas blocks instead of a unified brand surface.
 
@@ -171,20 +171,20 @@ Generated example:
 ```css
 :root {
   --brand-primary: #e82d42 !important;
-  --brand-canvas: #ffffff !important;
+  --brand-surface: #ffffff !important;
   /* ...every other --brand-* line gets !important too */
 }
 
 html, body {
   font-family: 'Inter', -apple-system, system-ui, sans-serif !important;
-  color: var(--brand-ink) !important;
-  background-color: var(--brand-canvas) !important;
+  color: var(--brand-on-surface) !important;
+  background-color: var(--brand-surface) !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Inter', -apple-system, system-ui, sans-serif !important;
   font-weight: 600 !important;
-  color: var(--brand-ink) !important;
+  color: var(--brand-on-surface) !important;
   letter-spacing: -0.005em !important;
 }
 ```
@@ -225,7 +225,7 @@ This helps future maintainers understand where the snippet came from.
 
 ## Complete worked example — Northwind Studio
 
-Given the [northwind-studio-DESIGN.md](../examples/northwind-studio-DESIGN.md) (fictional reference example), the generated snippet would be:
+Given the [northwind-studio-DESIGN.md](../examples/northwind-studio-DESIGN.md) (fictional v2 reference example — dembrandt color roles, converted `colors.foo` → `--brand-foo` per Step 3), the generated snippet would be:
 
 ```html
 <!-- Brand tokens for Northwind Studio -->
@@ -245,42 +245,33 @@ Given the [northwind-studio-DESIGN.md](../examples/northwind-studio-DESIGN.md) (
 
 <style>
   :root {
-    /* Brand voltage */
+    /* dembrandt color roles from DESIGN.md `colors` (colors.foo → --brand-foo) */
     --brand-primary: #0E6B7A !important;
-    --brand-primary-pressed: #0B5462 !important;
-    --brand-primary-tint-md: #2D8A9A !important;
-    --brand-primary-tint-xs: #8FCCD9 !important;
-
-    /* Text */
-    --brand-ink: #0F172A !important;
-    --brand-body: #475569 !important;
-
-    /* Surface */
-    --brand-canvas: #FFFFFF !important;
-    --brand-surface-warm: #FAF7F2 !important;
-    --brand-surface-cool: #F0F4F6 !important;
-
-    /* Semantic */
-    --brand-destructive: #DC2626 !important;
-    --brand-on-primary: #FFFFFF !important;
+    --brand-secondary: #2D8A9A !important;
+    --brand-tertiary: #F59E0B !important;
+    --brand-surface: #FFFFFF !important;
+    --brand-on-surface: #0F172A !important;
+    --brand-error: #DC2626 !important;
   }
 
   html, body {
-    font-family: 'Inter', -apple-system, system-ui, sans-serif !important;
-    color: var(--brand-ink) !important;
-    background-color: var(--brand-canvas) !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
+    color: var(--brand-on-surface) !important;
+    background-color: var(--brand-surface) !important;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', -apple-system, system-ui, sans-serif !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
     font-weight: 700 !important;
-    color: var(--brand-ink) !important;
+    color: var(--brand-on-surface) !important;
   }
 </style>
 ```
 
+The font stacks come from the example's `fonts` block (`'Inter', system-ui, sans-serif`), and the `html, body` role mapping follows Step 3: text color ← `on-surface`, page background ← `surface`. Every role in the example's `colors` block ships as a `--brand-*` variable — six roles, six lines, nothing invented.
+
 ## Constraints
 
-- **Always use `!important` on the `html, body` and `h1–h6` rules** when the target is Softr. Softr's theme CSS loads after this snippet and overrides any non-`!important` font/color rule on those selectors. Without the flag, brand fonts only apply inside Vibe Coding blocks (shadow DOM) — not in navigation, login, account, or any other Softr-rendered surface. CSS custom properties (`--brand-*`) on `:root` do NOT need `!important` — they don't compete for specificity.
+- **Always use `!important` on every declaration** when the target is Softr — applied rules AND the `--brand-*` custom properties, per the file-wide policy above. Softr's theme CSS loads after this snippet and overrides any non-`!important` font/color rule on `html, body` / `h1–h6`; the custom-property case is uniform-defensive insurance. Without the flags, brand fonts only apply inside Vibe Coding blocks (shadow DOM) — not in navigation, login, account, or any other Softr-rendered surface.
 - **Never include API keys or tokens** in the snippet. It will be exposed in the user's HTML head.
 - **Never load licensed fonts** from URLs the brand doesn't actually serve them at. Use Google Fonts substitutes for any paid foundry fonts.
 - **Keep the snippet under 100 lines.** Softr's Custom Code field has practical length limits and pasting a wall of CSS slows down theme inheritance.

@@ -1,34 +1,34 @@
-# Confidence Flags — How to Mark Token Status
+# Confidence Flags — How to Mark Extraction Status
 
-Every token in `DESIGN.md` carries a confidence flag. The flag tells downstream consumers (humans, LLMs, other skills) how much to trust the value. There are three flags. Always set one — never leave it blank.
+Every section in `DESIGN.md`'s `extraction_status` block carries a confidence flag. The flag tells downstream consumers (humans, LLMs, other skills) how much to trust the values. Always set one per section — never leave one blank.
 
-## The three flags
+**Where flags live in v2:** at the **section level** in `extraction_status`, plus on skill-owned blocks (`fonts`, `assets`, `tech_stack`, Application Patterns stubs). The dembrandt base tokens (`colors`, `typography`, `spacing`, `rounded`, `components`) never carry per-token `status` fields — they are observed values by definition, and restructuring them would break the base shape downstream tools parse. Specific doubts about individual base tokens go in `Known Gaps` prose instead.
+
+## The flags
 
 ### `extracted`
 
-The value was pulled directly from the source with high confidence.
+The value was observed directly from the source with high confidence.
 
 **Use when:**
 
-- Color came from `automation-lab/css-color-extractor` with usage_count > 0.
-- Font name came from `apify/web-scraper` Tier 2b computed-style pass.
-- Voice paragraph synthesized from Exa content where hero copy was directly quoted.
-- Token came from a user-uploaded `DESIGN.md` (Path C) and validated against schema.
-- Tech stack came from `misterkhan/website-tech-stack-scanner` and matched a known fingerprint.
+- Tokens came from a dembrandt extraction (they are computed-style observations by definition — the whole `tokens` section is `extracted` whenever Path A completed).
+- Font names were resolved from the extraction's Font URLs (real webfont files), not guessed.
+- The voice paragraph quotes hero/CTA copy read directly from the live site.
+- The logo came from the extraction JSON's `logo` key and downloaded successfully.
+- Tokens came from a user-uploaded `DESIGN.md` (Path C) and validated against the schema.
 
 **Trust level:** High. Downstream consumers should use these as-is without prompting the user.
 
 ### `inferred`
 
-The value was derived from indirect signals, not from the source directly. May be wrong.
+The value was derived from indirect signals, not observed directly. May be wrong.
 
 **Use when:**
 
-- Typography hierarchy sizes (display-xl, display-lg, etc.) — derived from typical Astro/Webflow patterns when CSS extractors didn't return them directly.
-- Border radius scale — when the dominant radius value came from class counts (`rounded-md` used 80x → infer `md: 12px`) but specific values weren't computed.
-- Shadow recipe — when shadow tier was inferred from "modern marketing site" patterns.
-- Spacing scale — when defaulted to Tailwind's 4px grid because no explicit scale was extracted.
-- Brand mood description — when inferred from voice synthesis without explicit brand language about mood.
+- Fonts were guessed from a vibe answer in guided Q&A ("clean and modern" → Inter) rather than observed.
+- The brand-mood sentences in `description` were synthesized without explicit brand language about mood.
+- The register was guessed from incomplete page text (voice three-way rule: `extracted` from readable copy / `inferred` from fragments / `needs-verification` from nothing).
 
 **Trust level:** Medium. The verification prompt (Step 6 in `SKILL.md`) should ask the user to confirm or override.
 
@@ -38,96 +38,67 @@ The value could not be captured. The skill must prompt the user before locking t
 
 **Use when:**
 
-- Specific font names couldn't be extracted (e.g. Tier 2b not run because `apify/web-scraper` approval missing, or page returned no font info).
-- Logo URL not captured.
-- Component-level recipes (button-primary, card, etc.) not directly extracted — only generic patterns inferred.
+- A font name couldn't be confirmed (computed `fontFamily` was a generic fallback and the Font URLs didn't resolve it either).
+- Logo URL not captured (nothing plausible in `logo`/`logoInstances`/`favicons`, or the download stayed blocked).
+- The extraction failed outright and the user declined Path D.
+- A missing single token was filled with the standard fallback defaults (8px radius, white canvas, near-black `#1a1a1a` text, Inter, one-tier shadow — see [../extractors/dembrandt-pipeline.md](../extractors/dembrandt-pipeline.md)): defaults ship only with this flag, resolved in the Step 6 prompt.
 - A user-uploaded `DESIGN.md` (Path C) is missing required fields.
-- A specific `extraction_status` section returned nothing useful.
+- dembrandt's `get_findings` flagged something severe the user hasn't resolved (e.g. a WCAG contrast failure on the primary).
 
 **Trust level:** None until verified. Downstream consumers should treat the value as a placeholder and prompt the user before using it.
 
-## Section-level flags
+### `scaffolded`
 
-`extraction_status` rolls up token flags into section-level summaries:
+Application Patterns stubs generated in Step 4b using brand-token defaults. Not present in the source, not yet refined by the team — intentional placeholders that say "starting point, revisit when building." `scaffolded` sections do **not** trigger the Step 6 verification prompt.
+
+## Section-level rollup
 
 ```yaml
 extraction_status:
-  colors: complete                              # all colors extracted
-  framework: complete                           # tech stack scanner returned matches
-  voice_and_mood: complete                      # Exa returned content + voice synthesized
-  typography_specific_fonts: complete           # Tier 2b ran successfully
-  spacing_radius_shadows: needs-verification    # Tier 1+2 didn't capture, defaults inferred
+  tokens: extracted (dembrandt v0.30.0, 5-page crawl of example.com)
+  fonts: extracted (resolved from Font URLs)
+  voice_and_mood: extracted (hero + pricing copy read from the live site)
+  assets: needs-verification (no plausible logo in the extraction — ask user)
+  app_patterns: scaffolded
 ```
 
 | Section value | Meaning |
 |---|---|
-| `complete` | Every token in this section is `extracted`. |
-| `partial` | Some tokens are `extracted`, others are `inferred` or `needs-verification`. List the gaps in `Known Gaps`. |
-| `inferred` | All tokens are `inferred` — defaults applied; user should confirm. |
-| `needs-verification` | All tokens flagged; section is essentially empty. |
+| `extracted` | Everything in this section was observed directly. |
+| `partial` | Some observed, some inferred or missing. Itemize the gaps in `Known Gaps`. |
+| `inferred` | Defaults or guesses applied; user should confirm. |
+| `needs-verification` | Essentially empty — mandatory prompt. |
+| `scaffolded` | Intentional stubs (Application Patterns only). |
 
-Do not use `complete` if any token in the section is below `extracted`.
-
-## Setting the right flag — examples
-
-**Color extracted directly from CSS:**
-```yaml
-primary: "#e82d42"  # extracted from CSS — usage_count: 4, properties: background-color, border-color, color
-```
-
-**Font extracted via computed styles:**
-```yaml
-font-display-name: "PPNeueMontreal"  # extracted via Tier 2b getComputedStyle on h1
-```
-
-**Typography hierarchy with mixed confidence:**
-```yaml
-display-xl:
-  fontFamily: "PPNeueMontreal, Arial, sans-serif"  # extracted
-  fontSize: 48px                                    # inferred — typical for Astro h1
-  fontWeight: 600                                   # inferred from Tailwind class counts
-  lineHeight: 1.1                                   # inferred
-```
-
-In a case like this, mark the parent token `inferred` because the size/weight/leading are guesses. The font family alone being extracted doesn't lift the whole entry.
-
-**Token completely missing:**
-```yaml
-spacing:
-  status: "needs-verification"
-  base: 16px      # default — verify
-  lg: 24px        # default — verify
-  section: 64px   # default — verify
-```
-
-Always set `status: needs-verification` at the top of the parent block when the entire scale is filler.
+Annotate the flag with a short parenthetical saying *how* the value was obtained — future readers (and the Step 6 prompt) rely on it.
 
 ## What to do when flags fire
 
-After Step 4 (synthesis) in `SKILL.md`, count the flags:
+After Step 4 (assembly) in `SKILL.md`, count the flags:
 
-- **0 flags below `extracted`** → skip to Step 7 (custom-code-header). No prompt needed.
-- **Any `inferred` flags** → optional verification prompt. Phrase as "I made these assumptions — confirm or override".
-- **Any `needs-verification` flags** → mandatory verification prompt. Phrase as "I couldn't extract these — paste from your brand guide or say 'skip'".
+- **Nothing below `extracted`** (ignoring `scaffolded`) → skip to Step 7 (custom-code-header). No prompt needed.
+- **Any `inferred` or `partial`** → optional verification prompt. Phrase as "I made these assumptions — confirm or override".
+- **Any `needs-verification`** → mandatory verification prompt. Phrase as "I couldn't capture these — paste from your brand guide or say 'skip'".
 
-The verification prompt should be **one consolidated message**, not a series of questions. Group flagged tokens by section. Always offer "skip" as an option — some users will accept the placeholder and resolve later.
+The verification prompt should be **one consolidated message**, not a series of questions. Group flagged items by section. Always offer "skip" — some users will accept the placeholder and resolve later.
 
 Example:
 
-> "I extracted colors and voice fully. Three things I couldn't fully confirm:
+> "I extracted tokens and voice fully. Three things I couldn't fully confirm:
 >
-> - **Specific serif font name** (currently Inter as fallback, status: needs-verification). Tier 2b extraction was skipped because the actor wasn't approved. Want me to retry, or paste the font name from your brand guide?
-> - **Border radius scale** (defaulted to 8px / 14px / 20px, status: inferred). Confirm or paste your scale.
+> - **Display font name** (computed styles showed only `ui-sans-serif`; the webfont files suggest 'Nohemi' — status: needs-verification). Confirm, or paste the name from your brand guide.
+> - **Radius scale** (site showed almost no rounded corners; recorded only `sm: 2px` — status: partial). Confirm that's intentional brand flatness.
 > - **Logo URL** (status: needs-verification). Paste the URL or say 'skip'.
 >
 > Reply with corrections, or say 'looks good' to lock these in as-is."
 
-After the user replies, edit `DESIGN.md` in place. Update both the token values *and* the flags. A token the user confirms moves from `inferred` to `extracted-by-user`. A token the user provides a new value for moves to `extracted-by-user` with the new value. A token the user says "skip" on stays at its current flag.
+After the user replies, edit `DESIGN.md` in place. Update both the values *and* the flags. An item the user confirms or supplies moves to `extracted-by-user`. An item the user says "skip" on stays at its current flag.
 
-## The fourth (implicit) flag — `extracted-by-user`
+## The implicit flag — `extracted-by-user`
 
-When the user confirms or overrides a value during Step 6, mark it `extracted-by-user`. This distinguishes between "automated extraction succeeded" and "human filled in the gap" without lying about the source. Downstream consumers can treat both equally as high-confidence.
+When the user confirms or overrides a value during Step 6, mark it `extracted-by-user`. This distinguishes "automated extraction succeeded" from "human filled the gap" without lying about the source. Downstream consumers treat both as high-confidence.
 
 ```yaml
-font-display-name: "Söhne"  # extracted-by-user (verified by user during Step 6 prompt)
+fonts:
+  display-name: "Söhne"   # extracted-by-user (verified by user during Step 6 prompt)
 ```

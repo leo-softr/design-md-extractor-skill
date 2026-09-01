@@ -1,21 +1,21 @@
 # Building Design MD Skill
 
-A Claude Skill for extracting a brand design system into a portable `DESIGN.md` file. The output is the canonical artifact any downstream skill (Softr Vibe Coding block generator, Webflow generator, custom React skill, human designer) can consume.
+A Claude Skill for extracting a brand design system into a portable `DESIGN.md` file. Since v2.0.0 the extraction engine is **[dembrandt](https://github.com/dembrandt/dembrandt)** (MIT) — a real-browser design-token extractor — and this skill layers on everything raw extraction can't provide: voice & copy register, resolved font names, logo assets, Softr app-pattern scaffolds, and an app-level custom-code snippet.
 
 ## What this skill does
 
-Captures a target brand's design tokens (colors, typography, spacing, shadows, voice, framework signals) into a single `DESIGN.md` file in your project folder. The file is the canonical artifact: any downstream tool (a Softr Vibe Coding block generator, a Webflow generator, a custom React skill, a human designer) can consume it.
+Captures a target brand's design tokens (colors, typography, spacing, radii, shadows, components) plus voice and assets into a single `DESIGN.md` file in your project folder. The base of the file is dembrandt's own DESIGN.md output (Google's DESIGN.md draft format), kept verbatim; the skill's augmentation layers make it Softr-ready.
 
 The skill supports four input paths:
 
 | Path | When to use |
 |---|---|
-| **A. URL extraction** | You have a target website. The skill runs an Apify + Exa pipeline to pull colors, fonts, framework, and voice. |
+| **A. URL extraction (dembrandt)** | You have a target website. dembrandt renders it in a real browser and reads computed styles — colors, typography, spacing, components — across a multi-page crawl. |
 | **B. awesome-design-md catalog** | Your target brand is one of the ~71 already documented at <https://github.com/VoltAgent/awesome-design-md>. Fastest path. |
-| **C. Manual upload** | You already have a `DESIGN.md` (from another tool, hand-written, or generated previously). The skill validates and accepts it. |
+| **C. Manual upload** | You already have a `DESIGN.md` (from another tool, hand-written, or generated previously). The skill validates, accepts, and augments it. |
 | **D. Guided Q&A** | You have a brand in your head but nothing written. The skill asks 8 questions and synthesizes a minimal `DESIGN.md`. |
 
-The skill always produces two files:
+The skill always produces two files (plus `./assets/` on Path A):
 
 - `./DESIGN.md` — the brand artifact
 - `./custom-code-header.html` — a snippet to paste into Softr's `Settings → Custom Code → Code inside header` for app-wide brand inheritance
@@ -54,13 +54,16 @@ Alternatively, on Claude.ai (web), upload the bundled `.zip` directly:
 
 ## Prerequisites
 
-For full functionality (Path A):
+For full functionality (Path A), dembrandt — no accounts, no API keys:
 
-1. **Apify MCP** connected to your client. Free tier works. See [extractors/apify-mcp-install.md](extractors/apify-mcp-install.md).
-2. **Exa MCP** connected (optional but recommended for voice/mood capture). See [extractors/exa-mcp.md](extractors/exa-mcp.md).
-3. **One-time approval** of `apify/web-scraper` in the Apify Console. See [extractors/apify-actor-approval.md](extractors/apify-actor-approval.md). The skill will prompt you when the approval is needed.
+```bash
+claude mcp add --transport stdio dembrandt -- npx -y --package dembrandt@latest dembrandt-mcp
+npx -y dembrandt@latest install-browser   # one-time: fetches the Chromium dembrandt drives
+```
 
-Paths B, C, and D have no MCP prerequisites.
+The `@latest` tag makes every server launch resolve the newest dembrandt release. No MCP? The skill falls back to the dembrandt CLI (`npx -y dembrandt@latest <url> --design-md --crawl 5`) — same engine, same-session. Setup details and failure handling: [extractors/dembrandt-pipeline.md](extractors/dembrandt-pipeline.md).
+
+Paths B, C, and D have no prerequisites.
 
 ## Usage
 
@@ -68,12 +71,12 @@ Three common invocation patterns:
 
 **Auto-trigger (recommended):**
 ```
-> Extract the brand from https://airbnb.com and save it as DESIGN.md.
+> Extract the brand from https://example.com and save it as DESIGN.md.
 ```
 
 **Slash command:**
 ```
-> /brand-extraction
+> /building-design-md
 > [skill prompts for path and source]
 ```
 
@@ -90,39 +93,36 @@ The skill always ends with a written `DESIGN.md` in the project folder and a pro
 building-design-md/
 ├── SKILL.md                          # Main skill prompt (entry point for the LLM)
 ├── README.md                         # This file
-├── design-md-format.md               # The DESIGN.md schema and field inventory
+├── design-md-format.md               # The DESIGN.md schema: dembrandt base + Softr augmentation layers
 ├── extractors/                       # Path-specific tooling
-│   ├── apify-pipeline.md             # Path A — the tiered Apify+Exa pipeline
-│   ├── apify-mcp-install.md          # One-time Apify MCP setup
-│   ├── apify-actor-approval.md       # One-time apify/web-scraper approval
-│   ├── exa-mcp.md                    # Exa MCP install + usage
+│   ├── dembrandt-pipeline.md         # Path A — dembrandt setup, extraction, fonts, voice, logo, failures
 │   ├── awesome-design-md-catalog.md  # Path B — pre-built catalog
 │   └── guided-qa.md                  # Path D — 8-question Q&A
 ├── references/                       # General references
 │   ├── intake-flow.md                # Gate question + path selection
-│   ├── confidence-flags.md           # extracted / inferred / needs-verification
-│   ├── tailwind-class-trap.md        # Why class-count analysis lies on Tailwind sites
+│   ├── app-patterns-stubs.md         # Step 4b Application Patterns scaffold (Softr stack)
+│   ├── confidence-flags.md           # extracted / inferred / needs-verification / scaffolded / partial
 │   ├── google-fonts-substitutes.md   # Fallback table for licensed brand fonts
 │   └── custom-code-header.md         # Generating the Softr Custom Code snippet
 └── examples/
-    └── northwind-studio-DESIGN.md    # Fictional reference example
+    └── northwind-studio-DESIGN.md    # Fictional reference example (v2 format)
 ```
 
 ## What this skill is *not*
 
 - **Not** a UI generator. This skill never produces JSX, React components, or HTML pages.
-- **Not** a website cloner. It captures tokens, not pixel-perfect replicas.
-- **Not** a substitute for human design judgment. Confidence flags exist because extractors are imperfect — review them.
+- **Not** a website cloner. It captures tokens, not pixel-perfect replicas — and only from sites you own or have permission to analyze.
+- **Not** a substitute for human design judgment. Confidence flags exist because extraction is imperfect — review them.
 
 ## Companion skill — `softr-vibe-coding`
 
-This skill is **Step 1** of a two-skill pipeline:
+This skill is the **brand-foundation half** of the pipeline:
 
 ```
-New client → building-design-md (brand → DESIGN.md) → softr-vibe-coding (DESIGN.md → JSX blocks) → shipped Softr app
+New client → building-design-md (dembrandt → DESIGN.md + layers) → softr-vibe-coding (DESIGN.md → blocks) → shipped Softr app
 ```
 
-The intended downstream is the [`softr-vibe-coding`](https://github.com/leo-softr/Softr-Vibe-Coding-Block-Claude-Skill) skill, which reads the `DESIGN.md` produced here and generates brand-aligned Softr Vibe Coding blocks (custom JSX components) without re-asking about colors, fonts, or component patterns.
+The intended downstream is the [`softr-vibe-coding`](https://github.com/leo-softr/Softr-Vibe-Coding-Block-Claude-Skill) skill, which reads the `DESIGN.md` produced here and generates brand-aligned Softr Vibe Coding blocks (custom TSX/JSX components) without re-asking about colors, fonts, or component patterns. Its own Step 1 can also generate a quick *raw* dembrandt DESIGN.md mid-build — run this skill instead when the project deserves the full foundation (voice, assets, scaffolds, custom-code snippet).
 
 **Install both for the full workflow** (one-line each):
 
@@ -133,7 +133,7 @@ npx softr-vibe-coding@latest init
 
 Both auto-update on every Claude Code session.
 
-Other consumers (Webflow generators, hand-rolled React, Figma plugins) can read the same `DESIGN.md` if they understand the format from <https://stitch.withgoogle.com/docs/design-md> or <https://github.com/VoltAgent/awesome-design-md>.
+Other consumers (Webflow generators, hand-rolled React, Figma plugins) can read the same `DESIGN.md` — the base layer follows the format from <https://stitch.withgoogle.com/docs/design-md> / <https://github.com/VoltAgent/awesome-design-md>, and the Softr-specific additions are clearly separated (see [design-md-format.md](design-md-format.md)).
 
 ## License
 

@@ -1,7 +1,7 @@
 {
   "name": "building-design-md",
-  "version": "1.0.1",
-  "description": "Claude Code skill: extract a brand foundation (colors, typography, voice, marketing-page patterns) into a portable DESIGN.md file for downstream Softr/Webflow/React generators. Installs into ~/.claude/skills/ and auto-updates on each Claude Code session.",
+  "version": "2.0.0",
+  "description": "Claude Code skill: build a brand foundation DESIGN.md by driving the dembrandt design-token extractor, then layering on voice, fonts, logo assets, and Softr app-pattern scaffolds for downstream Softr/Vibe-Coding generators. Installs into ~/.claude/skills/ and auto-updates on each Claude Code session.",
   "bin": {
     "building-design-md": "./bin/cli.js"
   },
@@ -22,7 +22,8 @@
     "brand-extraction",
     "design-md",
     "softr",
-    "design-tokens"
+    "design-tokens",
+    "dembrandt"
   ],
   "homepage": "https://github.com/leo-softr/design-md-extractor-skill#readme",
   "repository": {
